@@ -11,6 +11,7 @@ namespace ToDoListBL.Controllers
 {
     public class TaskController
     {
+        #region ------------------------Fields and properties-----------------------
         private ITaskSerializer serializer { get; set; }
 
         /// <summary>
@@ -68,6 +69,8 @@ namespace ToDoListBL.Controllers
         /// </summary>
         private StringEditor stringEditor { get; set; }
 
+        #endregion
+
         /// <summary>
         /// Class for task managment. (Add/Save/Load/Edit)
         /// </summary>
@@ -76,7 +79,7 @@ namespace ToDoListBL.Controllers
             AllTaskLists();
         }
 
-        #region ------------TaskManagment--------------
+        #region ------------TaskManagment-------------------------------------
 
         /// <summary>
         /// Serialize to binary format and save task to file.
@@ -100,20 +103,21 @@ namespace ToDoListBL.Controllers
         /// <summary>
         /// Get task list items.
         /// </summary>
-        public void TaskList()
+        public List<string> TaskList()
         {
-            Console.WriteLine("Task list:");
+            List<string> s=new List<string>();
             foreach (Task t in Tasks)
             {
-                Console.WriteLine(t.Name);
+                s.Add(t.Name);
             }
+            return s;
         }
 
         /// <summary>
         /// Add new task.
         /// </summary>
         /// <param name="taskName">Task name.</param>
-        public void AddNewTask(string taskName)
+        public string AddNewTask(string taskName)
         {
             if ((Tasks.Count == 0) || ((Tasks.Find(x => x.Name.Contains(taskName))) == null))
             {
@@ -122,9 +126,9 @@ namespace ToDoListBL.Controllers
                 text = Console.ReadLine();
                 Tasks.Add(new Task(taskName, new Content(text)));
                 Save();
-                return;
+                return "Created";
             }
-            Console.WriteLine(taskName + " is already there.");
+            return taskName + " is already there.";
         }
 
         /// <summary>
@@ -136,7 +140,7 @@ namespace ToDoListBL.Controllers
             try
             {
                 Tasks.Remove(Tasks.Find(x => x.Name.Equals(taskName)));
-                if (task.Name.Equals(taskName))
+                if (task!=null&&task.Name.Equals(taskName))
                     task = null;
             }
             catch (ArgumentNullException)
@@ -156,23 +160,27 @@ namespace ToDoListBL.Controllers
         }
         #endregion
 
-        #region ------------TaskEditing--------------
+
+
+
+        #region ------------TaskEditing---------------------------------------
         /// <summary>
         /// Show info of selected task.
         /// </summary>
         /// <param name="taskName">Task name.</param>
         /// <returns></returns>
-        public void ShowInfo()
+        public string TaskInfo()
         {
             try
             {
-                Console.WriteLine("Task name: " + task.Name + "\n" +
+                return "Task name: " + task.Name + "\n" +
                     "Content: " + task.Content.ToString() + "\n" +
-                    "Data: " + task.CrTime ?? throw new NullReferenceException("Select task.\n"));
+                    "Data: " + task.CrTime
+                    ?? throw new NullReferenceException("Select task.\n");
             }
             catch (NullReferenceException)
             {
-                Console.WriteLine("Please, select task.\n");
+                return "Please, select task.\n";
             }
         }
 
@@ -189,21 +197,25 @@ namespace ToDoListBL.Controllers
         /// <summary>
         /// Edit text of selected task.
         /// </summary>
-        public void StringEdit()
+        public string StringEdit()
         {
             try
             {
                 stringEditor = new StringEditor(task.Content.Text);
                 task.Content.Text = stringEditor.Str_();
                 Tasks[Tasks.FindIndex(x => x.Name == task.Name)] = task;
+                return "Edition completed";
             }
             catch (NullReferenceException)
             {
-                Console.WriteLine("Please, select task before start edition.");
+                return "Please, select task before start edition.";
             }
         }
 
         #endregion
+
+
+
 
         #region ------------ListManagment--------------
         /// <summary>
@@ -225,13 +237,13 @@ namespace ToDoListBL.Controllers
             }
         }
 
-        public void AddNewTaskList(string name)
+        public string AddNewTaskList(string name)
         {
             serializer = new ITaskSerializer();
             if (AllTaskLists().Contains(name))
-                Console.WriteLine("A list with same name already exists.");
-            else
-                serializer.Serialize(new List<Task>(), name);
+                return "A list with same name already exists.";
+            serializer.Serialize(new List<Task>(), name);
+            return "New task list created.";
         }
 
         /// <summary>
@@ -273,16 +285,21 @@ namespace ToDoListBL.Controllers
             }
         }
 
-        public void ShowTaskListInfo()
+        public string TaskListInfo()
         {
             if (listName != null)
             {
-                Console.WriteLine(listName + "\n" +
+                string s = listName + "\n" +
                     "Creation time: " + File.GetCreationTime(listPath).ToString() +
-                    "\nEdition time: " + File.GetLastWriteTime(listPath));
-                TaskList();
+                    "\nEdition time: " + File.GetLastWriteTime(listPath) + "\n";
+                foreach(string l in TaskList())
+                {
+                    s += l+"\n";
+                }
+                return s;
+
             }
-            else Console.WriteLine("Select task list.");
+            else return new ArgumentNullException("Select task list.").ParamName;
         }
 
         public void ClearListSelection()
